@@ -1,0 +1,9 @@
+# Backend (Maven Wrapper and Windows CMD files)
+CoupangRecallServiceBackend/mvnw text eol=lf
+CoupangRecallServiceBackend/*.cmd text eol=crlf
+
+# Frontend (Consider if any specific attributes are needed, e.g., for shell scripts)
+# Example: CoupangRecallServiceFrontend/some-script.sh text eol=lf
+
+# Global (Apply to all text files not otherwise specified)
+* text=auto

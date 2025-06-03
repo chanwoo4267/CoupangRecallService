@@ -1,0 +1,79 @@
+# Generic GitiIgnores
+###################
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.log
+*~
+*.swp
+
+# Maven / Spring Boot Backend (CoupangRecallServiceBackend)
+#########################################################
+CoupangRecallServiceBackend/HELP.md
+CoupangRecallServiceBackend/target/
+CoupangRecallServiceBackend/.mvn/wrapper/maven-wrapper.jar
+!CoupangRecallServiceBackend/**/src/main/**/target/
+!CoupangRecallServiceBackend/**/src/test/**/target/
+
+# STS (Spring Tool Suite) specific for Backend
+CoupangRecallServiceBackend/.apt_generated
+CoupangRecallServiceBackend/.classpath
+CoupangRecallServiceBackend/.factorypath
+CoupangRecallServiceBackend/.project
+CoupangRecallServiceBackend/.settings
+CoupangRecallServiceBackend/.springBeans
+CoupangRecallServiceBackend/.sts4-cache
+
+# IntelliJ IDEA specific for Backend (can be global if you open root in IntelliJ)
+CoupangRecallServiceBackend/.idea/
+CoupangRecallServiceBackend/*.iws
+CoupangRecallServiceBackend/*.iml
+CoupangRecallServiceBackend/*.ipr
+
+# NetBeans specific for Backend
+CoupangRecallServiceBackend/nbproject/private/
+CoupangRecallServiceBackend/nbbuild/
+CoupangRecallServiceBackend/dist/
+CoupangRecallServiceBackend/nbdist/
+CoupangRecallServiceBackend/.nb-gradle/
+CoupangRecallServiceBackend/build/
+!CoupangRecallServiceBackend/**/src/main/**/build/
+!CoupangRecallServiceBackend/**/src/test/**/build/
+
+# VS Code specific (can be global if you open root in VSCode)
+# If you use VSCode for both frontend and backend at the root level,
+# you might prefer .vscode/ at the root.
+# For now, keeping it backend-specific as per original file.
+CoupangRecallServiceBackend/.vscode/
+
+# React / Next.js Frontend (CoupangRecallServiceFrontend)
+#########################################################
+CoupangRecallServiceFrontend/node_modules/
+CoupangRecallServiceFrontend/.next/
+CoupangRecallServiceFrontend/out/
+CoupangRecallServiceFrontend/build/ # This was /build, assuming it's for frontend
+
+# Debug logs for Frontend
+CoupangRecallServiceFrontend/npm-debug.log*
+CoupangRecallServiceFrontend/yarn-debug.log*
+CoupangRecallServiceFrontend/yarn-error.log*
+CoupangRecallServiceFrontend/.pnpm-debug.log*
+
+# Env files for Frontend
+CoupangRecallServiceFrontend/.env*
+
+# Vercel specific for Frontend
+CoupangRecallServiceFrontend/.vercel/
+
+# TypeScript specific for Frontend
+CoupangRecallServiceFrontend/*.tsbuildinfo
+CoupangRecallServiceFrontend/next-env.d.ts
+
+# If you have a global .vscode for the entire CoupangRecallService project:
+# .vscode/
