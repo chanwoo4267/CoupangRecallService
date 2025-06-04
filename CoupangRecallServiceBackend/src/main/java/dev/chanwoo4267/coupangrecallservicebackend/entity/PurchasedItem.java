@@ -16,6 +16,7 @@ public class PurchasedItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "purchased_item_id")
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -26,6 +27,9 @@ public class PurchasedItem {
 
     @Column
     private String modelName; // 모델명
+
+    @Column
+    private String productCompanyName; // 제조사
 
     @Column
     private Integer quantity; // 수량

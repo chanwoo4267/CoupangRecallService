@@ -19,6 +19,9 @@ public class UserInfo {
     @Column(name = "user_id")
     private Long id;
 
+    @Column(length = 50)
+    private String username;
+
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
