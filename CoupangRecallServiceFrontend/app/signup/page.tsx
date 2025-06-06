@@ -47,13 +47,33 @@ export default function SignupPage() {
 
     setIsLoading(true)
 
-    // 실제 회원가입 로직은 여기에 구현
-    // 임시로 2초 후 로그인 페이지로 이동
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8080/api/users/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      if (response.ok) {
+        alert("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.")
+        router.push("/login")
+      } else {
+        // 서버에서 보낸 에러 메시지를 받음 (예: "이미 사용 중인 이메일입니다.")
+        const errorMessage = await response.text()
+        alert(`회원가입 실패: ${errorMessage}`)
+      }
+    } catch (error) {
+      console.error("An error occurred during sign up:", error)
+      alert("회원가입 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.")
+    } finally {
       setIsLoading(false)
-      alert("회원가입이 완료되었습니다!")
-      router.push("/login")
-    }, 2000)
+    }
   }
 
   return (
