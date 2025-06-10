@@ -10,8 +10,10 @@ public class SignupRequestDto {
     private String email;
     private String password;
 
+    public SignupRequestDto() {
 
-    public SignupRequestDto() {}
+    }
+
     public SignupRequestDto(String name, String email, String password) {
         this.name = name;
         this.email = email;

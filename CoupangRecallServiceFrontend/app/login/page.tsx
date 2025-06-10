@@ -22,12 +22,30 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // 실제 로그인 로직은 여기에 구현
-    // 임시로 2초 후 대시보드로 이동
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem("authToken", data.token) // JWT를 localStorage에 저장
+        alert("로그인에 성공했습니다!")
+        router.push("/dashboard")
+      } else {
+        const errorMessage = await response.text()
+        alert(`로그인 실패: ${errorMessage}`)
+      }
+    } catch (error) {
+      console.error("An error occurred during login:", error)
+      alert("로그인 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.")
+    } finally {
       setIsLoading(false)
-      router.push("/dashboard")
-    }, 2000)
+    }
   }
 
   return (

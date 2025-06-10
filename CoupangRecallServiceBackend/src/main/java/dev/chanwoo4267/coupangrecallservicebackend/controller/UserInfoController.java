@@ -1,5 +1,7 @@
 package dev.chanwoo4267.coupangrecallservicebackend.controller;
 
+import dev.chanwoo4267.coupangrecallservicebackend.dto.JwtResponseDto;
+import dev.chanwoo4267.coupangrecallservicebackend.dto.LoginRequestDto;
 import dev.chanwoo4267.coupangrecallservicebackend.dto.SignupRequestDto;
 import dev.chanwoo4267.coupangrecallservicebackend.entity.UserInfo;
 import dev.chanwoo4267.coupangrecallservicebackend.service.UserInfoService;
@@ -26,6 +28,19 @@ public class UserInfoController {
             return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    // 로그인 API
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto) {
+        try {
+            String token = userInfoService.login(loginRequestDto);
+            // 성공 시, JWT를 담은 DTO와 함께 200 OK 상태 코드 반환
+            return ResponseEntity.ok(new JwtResponseDto(token));
+        } catch (IllegalArgumentException e) {
+            // 이메일 또는 비밀번호 불일치 시 401 Unauthorized 상태 코드 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 }
