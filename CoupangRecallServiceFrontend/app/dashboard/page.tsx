@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Shield, LogOut, User } from "lucide-react"
@@ -11,10 +12,48 @@ import AllOrders from "./components/all-orders"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("upload")
+  const [username, setUsername] = useState("")
+  const router = useRouter()
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        alert("로그인이 필요합니다.")
+        router.push("/login")
+        return
+      }
+
+      try {
+        const response = await fetch("http://localhost:8080/api/users/myinfo", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setUsername(data.name)
+        } else {
+          alert("세션이 만료되었습니다. 다시 로그인해주세요.")
+          localStorage.removeItem("authToken")
+          router.push("/login")
+        }
+      } catch (error) {
+        console.error("사용자 정보 조회 중 오류 발생:", error)
+        alert("오류가 발생했습니다. 다시 시도해주세요.")
+      }
+    }
+
+    fetchUserInfo()
+  }, [router])
 
   const handleLogout = () => {
-    // 로그아웃 로직
-    window.location.href = "/"
+    localStorage.removeItem("authToken")
+    alert("로그아웃 되었습니다.")
+    router.push("/")
   }
 
   return (
@@ -43,7 +82,7 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-sm text-gray-600">
                 <User className="h-4 w-4 mr-1" />
-                <span>홍길동님</span>
+                {username ? `${username}님, 환영합니다!` : "로딩 중..."}
               </div>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-1" />
