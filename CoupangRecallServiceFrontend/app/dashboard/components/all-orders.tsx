@@ -5,122 +5,96 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Package, Calendar, DollarSign } from "lucide-react"
+import { Search, Package, Calendar, DollarSign, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 
-interface Order {
-  id: string
+interface PurchasedItem {
+  id: number
   productName: string
-  manufacturer: string
+  purchaseDate: string
+  orderNumber: string
+  totalAmount: number
   platform: string
-  purchaseDate: Date
-  quantity: number
-  price: number
-  status?: string
-  description?: string
 }
 
 const platforms = [
-  { value: "coupang", label: "쿠팡", color: "bg-red-100 text-red-800" },
-  { value: "naver", label: "네이버 스토어", color: "bg-green-100 text-green-800" },
-  { value: "11st", label: "11번가", color: "bg-orange-100 text-orange-800" },
-  { value: "gmarket", label: "G마켓", color: "bg-blue-100 text-blue-800" },
-  { value: "auction", label: "옥션", color: "bg-purple-100 text-purple-800" },
-  { value: "tmon", label: "티몬", color: "bg-pink-100 text-pink-800" },
-  { value: "wemakeprice", label: "위메프", color: "bg-indigo-100 text-indigo-800" },
-  { value: "ssg", label: "SSG.COM", color: "bg-yellow-100 text-yellow-800" },
-  { value: "lotte", label: "롯데온", color: "bg-red-100 text-red-800" },
-  { value: "interpark", label: "인터파크", color: "bg-cyan-100 text-cyan-800" },
-  { value: "yes24", label: "YES24", color: "bg-emerald-100 text-emerald-800" },
-  { value: "kyobo", label: "교보문고", color: "bg-slate-100 text-slate-800" },
-  { value: "other", label: "기타", color: "bg-gray-100 text-gray-800" },
+  { value: "Coupang", label: "쿠팡", color: "bg-red-100 text-red-800" },
+  { value: "11번가", label: "11번가", color: "bg-orange-100 text-orange-800" },
+  { value: "G마켓", label: "G마켓", color: "bg-blue-100 text-blue-800" },
+  { value: "옥션", label: "옥션", color: "bg-purple-100 text-purple-800" },
+  { value: "네이버", label: "네이버 스토어", color: "bg-green-100 text-green-800" },
+  { value: "티몬", label: "티몬", color: "bg-pink-100 text-pink-800" },
+  { value: "위메프", label: "위메프", color: "bg-indigo-100 text-indigo-800" },
+  { value: "SSG.COM", label: "SSG.COM", color: "bg-yellow-100 text-yellow-800" },
+  { value: "롯데온", label: "롯데온", color: "bg-red-100 text-red-800" },
+  { value: "인터파크", label: "인터파크", color: "bg-cyan-100 text-cyan-800" },
+  { value: "YES24", label: "YES24", color: "bg-emerald-100 text-emerald-800" },
+  { value: "교보문고", label: "교보문고", color: "bg-slate-100 text-slate-800" },
+  { value: "기타", label: "기타", color: "bg-gray-100 text-gray-800" },
 ]
 
 export default function AllOrders() {
-  const [orders, setOrders] = useState<Order[]>([])
+  const [purchasedItems, setPurchasedItems] = useState<PurchasedItem[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date-desc")
   const [filterBy, setFilterBy] = useState("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // 샘플 데이터 (실제로는 상태 관리를 통해 다른 컴포넌트에서 가져옴)
+  // 실제 API에서 데이터 가져오기
   useEffect(() => {
-    const sampleOrders: Order[] = [
-      {
-        id: "1",
-        productName: "ABC 전자레인지 모델 XYZ-2023",
-        manufacturer: "ABC전자",
-        platform: "coupang",
-        purchaseDate: new Date("2023-12-10"),
-        quantity: 1,
-        price: 89000,
-        status: "배송완료",
-      },
-      {
-        id: "2",
-        productName: "DEF 아기용품 젖병 세트",
-        manufacturer: "DEF생활용품",
-        platform: "naver",
-        purchaseDate: new Date("2023-11-25"),
-        quantity: 2,
-        price: 25000,
-        status: "배송완료",
-      },
-      {
-        id: "3",
-        productName: "스마트폰 케이스",
-        manufacturer: "XYZ전자",
-        platform: "11st",
-        purchaseDate: new Date("2024-01-05"),
-        quantity: 1,
-        price: 15000,
-        description: "투명 실리콘 케이스",
-      },
-      {
-        id: "4",
-        productName: "무선 이어폰",
-        manufacturer: "사운드테크",
-        platform: "gmarket",
-        purchaseDate: new Date("2024-01-15"),
-        quantity: 1,
-        price: 120000,
-        status: "배송완료",
-      },
-      {
-        id: "5",
-        productName: "운동화",
-        manufacturer: "스포츠브랜드",
-        platform: "auction",
-        purchaseDate: new Date("2024-01-20"),
-        quantity: 1,
-        price: 85000,
-        status: "배송완료",
-      },
-    ]
-    setOrders(sampleOrders)
+    const fetchPurchasedItems = async () => {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        setError("인증 토큰이 없습니다.")
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch("http://localhost:8080/api/purchaseditems/myitems", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setPurchasedItems(data)
+        } else {
+          setError("구매 내역을 불러오는데 실패했습니다.")
+        }
+      } catch (error) {
+        console.error("구매 내역 조회 중 오류 발생:", error)
+        setError("서버 연결에 실패했습니다.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPurchasedItems()
   }, [])
 
   // 필터링 및 정렬
-  const filteredAndSortedOrders = orders
-    .filter((order) => {
-      const matchesSearch =
-        order.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesFilter = filterBy === "all" || order.platform === filterBy
-
+  const filteredAndSortedItems = purchasedItems
+    .filter((item) => {
+      const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesFilter = filterBy === "all" || item.platform === filterBy
       return matchesSearch && matchesFilter
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "date-desc":
-          return b.purchaseDate.getTime() - a.purchaseDate.getTime()
+          return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()
         case "date-asc":
-          return a.purchaseDate.getTime() - b.purchaseDate.getTime()
+          return new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime()
         case "price-desc":
-          return b.price - a.price
+          return b.totalAmount - a.totalAmount
         case "price-asc":
-          return a.price - b.price
+          return a.totalAmount - b.totalAmount
         case "name":
           return a.productName.localeCompare(b.productName)
         default:
@@ -128,20 +102,39 @@ export default function AllOrders() {
       }
     })
 
-  const totalOrders = orders.length
-  const totalAmount = orders.reduce((sum, order) => sum + order.price, 0)
+  const totalOrders = purchasedItems.length
+  const totalAmount = purchasedItems.reduce((sum, item) => sum + item.totalAmount, 0)
 
   // 플랫폼별 통계
   const platformStats = platforms
     .map((platform) => ({
       ...platform,
-      count: orders.filter((order) => order.platform === platform.value).length,
+      count: purchasedItems.filter((item) => item.platform === platform.value).length,
     }))
     .filter((stat) => stat.count > 0)
 
   const getPlatformInfo = (platformValue: string) => {
     return (
       platforms.find((p) => p.value === platformValue) || { label: platformValue, color: "bg-gray-100 text-gray-800" }
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">구매 내역을 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류가 발생했습니다</h3>
+        <p className="text-gray-600">{error}</p>
+      </div>
     )
   }
 
@@ -220,7 +213,7 @@ export default function AllOrders() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="상품명 또는 제조회사로 검색..."
+                placeholder="상품명으로 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -256,7 +249,7 @@ export default function AllOrders() {
           </div>
 
           {/* 주문 목록 */}
-          {filteredAndSortedOrders.length === 0 ? (
+          {filteredAndSortedItems.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -270,22 +263,18 @@ export default function AllOrders() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredAndSortedOrders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+              {filteredAndSortedItems.map((item) => (
+                <div key={item.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{order.productName}</h3>
-                      <p className="text-gray-600 mb-1">제조회사: {order.manufacturer}</p>
-                      <p className="text-gray-600 mb-1">구매일: {format(order.purchaseDate, "PPP", { locale: ko })}</p>
-                      <p className="text-gray-600 mb-1">
-                        수량: {order.quantity}개 | 가격: {order.price.toLocaleString()}원
-                      </p>
-                      {order.status && <p className="text-gray-600 mb-1">상태: {order.status}</p>}
-                      {order.description && <p className="text-gray-600">설명: {order.description}</p>}
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.productName}</h3>
+                      <p className="text-gray-600 mb-1">구매일: {format(new Date(item.purchaseDate), "PPP", { locale: ko })}</p>
+                      <p className="text-gray-600 mb-1">주문번호: {item.orderNumber}</p>
+                      <p className="text-gray-600 mb-1">가격: {item.totalAmount.toLocaleString()}원</p>
                     </div>
                     <div className="flex flex-col items-end space-y-2">
-                      <Badge className={getPlatformInfo(order.platform).color}>
-                        {getPlatformInfo(order.platform).label}
+                      <Badge className={getPlatformInfo(item.platform).color}>
+                        {getPlatformInfo(item.platform).label}
                       </Badge>
                     </div>
                   </div>

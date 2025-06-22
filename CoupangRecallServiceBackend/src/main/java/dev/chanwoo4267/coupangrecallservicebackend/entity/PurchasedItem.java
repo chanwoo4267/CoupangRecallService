@@ -23,23 +23,17 @@ public class PurchasedItem {
     private UserInfo userInfo;
 
     @Column(nullable = false)
-    private String productName; // 제품명
+    private String productName; // 상품명
 
-    @Column
-    private String modelName; // 모델명
+    @Column(nullable = false)
+    private LocalDate purchaseDate; // 주문일자
 
-    @Column
-    private String productCompanyName; // 제조사
-
-    @Column
-    private Integer quantity; // 수량
-
-    @Column
-    private LocalDate purchaseDate; // 구매일자
-
-    @Column
+    @Column(nullable = false)
     private String orderNumber; // 주문번호
 
-    @Column
-    private String productNumber; // 상품번호
+    @Column(nullable = false)
+    private Integer totalAmount; // 총결제금액(원)
+
+    @Column(nullable = false)
+    private String platform; // 플랫폼 (예: "Coupang", "11번가", "G마켓" 등)
 }
