@@ -5,53 +5,49 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon, Plus, Trash2 } from "lucide-react"
+import { CalendarIcon, Plus, Loader2, CheckCircle } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 
 interface ManualOrder {
   id: string
   productName: string
-  manufacturer: string
+  orderNumber: string
   platform: string
   purchaseDate: Date | undefined
-  quantity: number
-  price: number
-  description: string
+  totalAmount: number
 }
 
 const platforms = [
-  { value: "coupang", label: "쿠팡" },
-  { value: "naver", label: "네이버 스토어" },
-  { value: "11st", label: "11번가" },
-  { value: "gmarket", label: "G마켓" },
-  { value: "auction", label: "옥션" },
-  { value: "tmon", label: "티몬" },
-  { value: "wemakeprice", label: "위메프" },
-  { value: "ssg", label: "SSG.COM" },
-  { value: "lotte", label: "롯데온" },
-  { value: "interpark", label: "인터파크" },
-  { value: "yes24", label: "YES24" },
-  { value: "kyobo", label: "교보문고" },
-  { value: "other", label: "기타" },
+  { value: "Coupang", label: "쿠팡" },
+  { value: "11번가", label: "11번가" },
+  { value: "G마켓", label: "G마켓" },
+  { value: "옥션", label: "옥션" },
+  { value: "네이버", label: "네이버 스토어" },
+  { value: "티몬", label: "티몬" },
+  { value: "위메프", label: "위메프" },
+  { value: "SSG.COM", label: "SSG.COM" },
+  { value: "롯데온", label: "롯데온" },
+  { value: "인터파크", label: "인터파크" },
+  { value: "YES24", label: "YES24" },
+  { value: "교보문고", label: "교보문고" },
+  { value: "기타", label: "기타" },
 ]
 
 export default function ManualEntry() {
-  const [orders, setOrders] = useState<ManualOrder[]>([])
   const [currentOrder, setCurrentOrder] = useState<ManualOrder>({
     id: "",
     productName: "",
-    manufacturer: "",
+    orderNumber: "",
     platform: "",
     purchaseDate: undefined,
-    quantity: 1,
-    price: 0,
-    description: "",
+    totalAmount: 0,
   })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const handleInputChange = (field: keyof ManualOrder, value: any) => {
     setCurrentOrder((prev) => ({
@@ -60,37 +56,66 @@ export default function ManualEntry() {
     }))
   }
 
-  const handleAddOrder = () => {
+  const handleAddOrder = async () => {
     if (
       !currentOrder.productName ||
-      !currentOrder.manufacturer ||
+      !currentOrder.orderNumber ||
       !currentOrder.platform ||
-      !currentOrder.purchaseDate
+      !currentOrder.purchaseDate ||
+      currentOrder.totalAmount <= 0
     ) {
       alert("필수 항목을 모두 입력해주세요.")
       return
     }
 
-    const newOrder = {
-      ...currentOrder,
-      id: Date.now().toString(),
+    setLoading(true)
+    setSuccess(null)
+
+    const token = localStorage.getItem("authToken")
+    if (!token) {
+      alert("로그인이 필요합니다.")
+      setLoading(false)
+      return
     }
 
-    setOrders((prev) => [...prev, newOrder])
-    setCurrentOrder({
-      id: "",
-      productName: "",
-      manufacturer: "",
-      platform: "",
-      purchaseDate: undefined,
-      quantity: 1,
-      price: 0,
-      description: "",
-    })
-  }
+    try {
+      const requestData = {
+        productName: currentOrder.productName,
+        purchaseDate: currentOrder.purchaseDate.toISOString().split('T')[0], // YYYY-MM-DD 형식
+        orderNumber: currentOrder.orderNumber,
+        totalAmount: currentOrder.totalAmount,
+        platform: currentOrder.platform,
+      }
 
-  const handleDeleteOrder = (id: string) => {
-    setOrders((prev) => prev.filter((order) => order.id !== id))
+      const response = await fetch("http://localhost:8080/api/purchaseditems/additems/manual", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      })
+
+      if (response.ok) {
+        setCurrentOrder({
+          id: "",
+          productName: "",
+          orderNumber: "",
+          platform: "",
+          purchaseDate: undefined,
+          totalAmount: 0,
+        })
+        setSuccess("주문이 성공적으로 추가되었습니다!")
+      } else {
+        const errorData = await response.json()
+        alert(`주문 추가 실패: ${errorData.message || "알 수 없는 오류가 발생했습니다."}`)
+      }
+    } catch (error) {
+      console.error("주문 추가 중 오류 발생:", error)
+      alert("서버 연결에 실패했습니다.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getPlatformLabel = (platform: string) => {
@@ -119,12 +144,12 @@ export default function ManualEntry() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="manufacturer">제조회사 *</Label>
+              <Label htmlFor="orderNumber">주문번호 *</Label>
               <Input
-                id="manufacturer"
-                placeholder="제조회사를 입력하세요"
-                value={currentOrder.manufacturer}
-                onChange={(e) => handleInputChange("manufacturer", e.target.value)}
+                id="orderNumber"
+                placeholder="주문번호를 입력하세요"
+                value={currentOrder.orderNumber}
+                onChange={(e) => handleInputChange("orderNumber", e.target.value)}
               />
             </div>
 
@@ -169,86 +194,42 @@ export default function ManualEntry() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantity">수량</Label>
+              <Label htmlFor="totalAmount">총결제금액 (원) *</Label>
               <Input
-                id="quantity"
+                id="totalAmount"
                 type="number"
                 min="1"
-                value={currentOrder.quantity}
-                onChange={(e) => handleInputChange("quantity", Number.parseInt(e.target.value) || 1)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price">가격 (원)</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0"
                 placeholder="0"
-                value={currentOrder.price}
-                onChange={(e) => handleInputChange("price", Number.parseInt(e.target.value) || 0)}
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">상품 설명 (선택사항)</Label>
-              <Textarea
-                id="description"
-                placeholder="상품에 대한 추가 정보를 입력하세요"
-                value={currentOrder.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                value={currentOrder.totalAmount}
+                onChange={(e) => handleInputChange("totalAmount", Number.parseInt(e.target.value) || 0)}
               />
             </div>
           </div>
 
+          {success && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+              <span className="text-green-800">{success}</span>
+            </div>
+          )}
+
           <div className="mt-6">
-            <Button onClick={handleAddOrder} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              주문 추가
+            <Button onClick={handleAddOrder} className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  주문 추가
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {orders.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>수동 입력된 주문 목록</CardTitle>
-            <CardDescription>총 {orders.length}개의 주문이 등록되었습니다</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-lg">{order.productName}</h4>
-                      <p className="text-gray-600">제조회사: {order.manufacturer}</p>
-                      <p className="text-gray-600">구매 플랫폼: {getPlatformLabel(order.platform)}</p>
-                      <p className="text-gray-600">
-                        구입일: {order.purchaseDate ? format(order.purchaseDate, "PPP", { locale: ko }) : ""}
-                      </p>
-                      <p className="text-gray-600">
-                        수량: {order.quantity}개 | 가격: {order.price.toLocaleString()}원
-                      </p>
-                      {order.description && <p className="text-gray-600 mt-2">설명: {order.description}</p>}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteOrder(order.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

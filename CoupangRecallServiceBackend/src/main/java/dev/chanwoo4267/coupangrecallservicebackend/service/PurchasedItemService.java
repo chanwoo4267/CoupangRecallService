@@ -1,7 +1,9 @@
 package dev.chanwoo4267.coupangrecallservicebackend.service;
 
+import dev.chanwoo4267.coupangrecallservicebackend.dto.ManualEntryRequestDto;
 import dev.chanwoo4267.coupangrecallservicebackend.dto.PurchasedItemDto;
 import dev.chanwoo4267.coupangrecallservicebackend.entity.PurchasedItem;
+import dev.chanwoo4267.coupangrecallservicebackend.entity.UserInfo;
 import dev.chanwoo4267.coupangrecallservicebackend.repository.PurchasedItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +16,11 @@ import java.util.stream.Collectors;
 public class PurchasedItemService {
 
     private final PurchasedItemRepository purchasedItemRepository;
+    private final UserInfoService userInfoService;
 
-    public PurchasedItemService(PurchasedItemRepository purchasedItemRepository) {
+    public PurchasedItemService(PurchasedItemRepository purchasedItemRepository, UserInfoService userInfoService) {
         this.purchasedItemRepository = purchasedItemRepository;
+        this.userInfoService = userInfoService;
     }
 
     // 구매 내역 저장
@@ -39,5 +43,21 @@ public class PurchasedItemService {
     public long getPurchasedItemCountByUserEmail(String email) {
         // email로 직접 count 쿼리 실행
         return purchasedItemRepository.countByUserInfo_Email(email);
+    }
+
+    // 수동 입력으로 구매 내역 추가
+    public PurchasedItemDto addManualEntry(String userEmail, ManualEntryRequestDto requestDto) {
+        UserInfo userInfo = userInfoService.getUserInfoEntityByEmail(userEmail);
+
+        PurchasedItem purchasedItem = new PurchasedItem();
+        purchasedItem.setUserInfo(userInfo);
+        purchasedItem.setProductName(requestDto.getProductName());
+        purchasedItem.setPurchaseDate(requestDto.getPurchaseDate());
+        purchasedItem.setOrderNumber(requestDto.getOrderNumber());
+        purchasedItem.setTotalAmount(requestDto.getTotalAmount());
+        purchasedItem.setPlatform(requestDto.getPlatform());
+
+        PurchasedItem savedItem = purchasedItemRepository.save(purchasedItem);
+        return PurchasedItemDto.from(savedItem);
     }
 }

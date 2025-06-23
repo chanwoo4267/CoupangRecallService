@@ -61,4 +61,11 @@ public class UserInfoService {
                 .orElseThrow(() -> new IllegalArgumentException(email + "을 가진 사용자를 찾을 수 없습니다."));
         return new UserInfoDto(userInfo.getUsername(), userInfo.getEmail());
     }
+
+    // 이메일로 사용자 엔티티 조회
+    @Transactional(readOnly = true)
+    public UserInfo getUserInfoEntityByEmail(String email) {
+        return userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException(email + "을 가진 사용자를 찾을 수 없습니다."));
+    }
 }
