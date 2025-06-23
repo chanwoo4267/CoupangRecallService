@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Package, Calendar, DollarSign, Loader2 } from "lucide-react"
+import { Search, Package, Calendar, DollarSign, Loader2, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { Button } from "@/components/ui/button"
 
 interface PurchasedItem {
   id: number
@@ -41,6 +42,7 @@ export default function AllOrders() {
   const [filterBy, setFilterBy] = useState("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   // 실제 API에서 데이터 가져오기
   useEffect(() => {
@@ -117,6 +119,39 @@ export default function AllOrders() {
     return (
       platforms.find((p) => p.value === platformValue) || { label: platformValue, color: "bg-gray-100 text-gray-800" }
     )
+  }
+
+  // 주문 삭제 핸들러 (추후 구현)
+  const handleDeleteOrder = async (id: number) => {
+    if (!window.confirm("정말 이 주문을 삭제하시겠습니까?")) return;
+    setDeletingId(id)
+    const token = localStorage.getItem("authToken")
+    if (!token) {
+      alert("로그인이 필요합니다.")
+      setDeletingId(null)
+      return
+    }
+    try {
+      const response = await fetch(`http://localhost:8080/api/purchaseditems/deleteitems/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      })
+      if (response.status === 204) {
+        setPurchasedItems((prev) => prev.filter((item) => item.id !== id))
+      } else if (response.status === 403) {
+        alert("본인 소유의 주문만 삭제할 수 있습니다.")
+      } else if (response.status === 404) {
+        alert("주문을 찾을 수 없습니다.")
+      } else {
+        alert("삭제에 실패했습니다.")
+      }
+    } catch (e) {
+      alert("서버 연결에 실패했습니다.")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   if (loading) {
@@ -276,6 +311,19 @@ export default function AllOrders() {
                       <Badge className={getPlatformInfo(item.platform).color}>
                         {getPlatformInfo(item.platform).label}
                       </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteOrder(item.id)}
+                        className="text-red-600 hover:text-red-700 mt-2"
+                        disabled={deletingId === item.id}
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>
